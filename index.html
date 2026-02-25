@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fake News Detection System</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <script>
+        function showLoader(){
+            document.getElementById("loader").style.display="block";
+        }
+
+        function toggleTheme(){
+            document.body.classList.toggle("dark-mode");
+        }
+
+        /* Auto resize textarea with limit */
+        function autoResize(textarea){
+            textarea.style.height = "auto";
+
+            if(textarea.scrollHeight < 200){
+                textarea.style.height = textarea.scrollHeight + "px";
+                textarea.style.overflowY = "hidden";
+            }
+            else{
+                textarea.style.height = "200px";
+                textarea.style.overflowY = "auto";
+            }
+        }
+
+        /* Expand / Collapse Content */
+        function toggleExpand(){
+            var textarea = document.getElementById("news_content");
+            var btn = document.getElementById("expandBtn");
+
+            if(textarea.classList.contains("expanded")){
+                textarea.classList.remove("expanded");
+                textarea.style.height = "200px";
+                textarea.style.overflowY = "auto";
+                btn.innerText = "Expand";
+            }
+            else{
+                textarea.classList.add("expanded");
+                textarea.style.height = "450px";
+                textarea.style.overflowY = "auto";
+                btn.innerText = "Collapse";
+            }
+        }
+
+        /* Resize again after reload */
+        window.onload = function(){
+            var textarea = document.getElementById("news_content");
+            if(textarea){
+                autoResize(textarea);
+            }
+        }
+    </script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">📰</div>
+        <h1>Fake News Detection System</h1>
+        <p class="subtitle">Machine Learning Based News Verification</p>
+
+        <button class="theme-btn" onclick="toggleTheme()">🌙 Toggle Mode</button>
+    </div>
+
+    <!-- FORM -->
+    <form action="/predict" method="POST" onsubmit="showLoader()">
+
+        <label>News Title</label>
+        <input 
+            type="text" 
+            name="news_title" 
+            value="{{ request.form.news_title }}"
+            required>
+
+        <label>News Content</label>
+
+        <!-- EDITED TEXTAREA -->
+        <textarea 
+            id="news_content"
+            name="news_content"
+            oninput="autoResize(this)"
+            required>{{ request.form.news_content }}</textarea>
+
+        <!-- NEW Expand Button -->
+        <button type="button" id="expandBtn" class="expand-btn" onclick="toggleExpand()">
+            Expand
+        </button>
+
+        <div class="button-group">
+            <button type="submit">Detect</button>
+
+            <button type="button" class="clear-btn" onclick="window.location.href='/'">
+                Clear All
+            </button>
+        </div>
+
+        <div id="loader" class="loader"></div>
+
+    </form>
+
+    <!-- RESULT -->
+    {% if prediction_text %}
+    <div class="result {{ prediction_type }}">
+        {{ prediction_type|capitalize }} : {{ prediction_text }}
+    </div>
+
+    <div class="progress-box">
+        <div class="progress-text">
+            Confidence: {{ confidence }}%
+        </div>
+
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ confidence }}%"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Prediction History -->
+    {% if history %}
+    <div class="history">
+        <h3>Previous Predictions</h3>
+
+        {% for item in history %}
+        <div class="history-box">
+            <b>{{ item.title }}</b><br>
+            Result: {{ item.result }} | Confidence: {{ item.confidence }}%
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
